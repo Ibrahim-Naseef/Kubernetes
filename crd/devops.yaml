@@ -1,0 +1,9 @@
+kind: DevopsBatch
+apiVersion: kubernetes.com/v1
+metadata:
+  name: devops-batch
+spec:
+  name: devops-batch
+  duration: 5m
+  mode: parallel
+  platform: linux
