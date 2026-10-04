@@ -1,0 +1,32 @@
+# Real world: nightly/minute backup. Change schedule to "0 2 * * *" for 2 AM daily.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: minute-backup
+  namespace: nginx
+spec:
+  schedule: "* * * * *"
+  concurrencyPolicy: Forbid          # don't start a new run if the old one is still running
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: minute-backup
+              image: busybox:1.36
+              command: ["/bin/sh", "-c"]
+              args:
+                - echo "Backup started at $(date)";
+                  mkdir -p /backups/$(date +%s) && cp -r /demo-data/. /backups/$(date +%s)/;
+                  echo "Backup completed at $(date)"
+              volumeMounts:
+                - {name: data-volume, mountPath: /demo-data}
+                - {name: backup-volume, mountPath: /backups}
+          volumes:
+            - name: data-volume
+              hostPath: {path: /demo-data, type: DirectoryOrCreate}
+            - name: backup-volume
+              hostPath: {path: /backups, type: DirectoryOrCreate}

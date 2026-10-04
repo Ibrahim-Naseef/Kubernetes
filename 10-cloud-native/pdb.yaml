@@ -1,0 +1,8 @@
+# Keep at least 3 workers alive while nodes drain (upgrades, Spot reclaim, autoscaler scale-down).
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata: {name: image-resizer-pdb}
+spec:
+  minAvailable: 3
+  selector:
+    matchLabels: {app: image-resizer}

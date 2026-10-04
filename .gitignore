@@ -21,3 +21,7 @@ django-notes-app/staticfiles/
 # Local files
 *.log
 .DS_Store
+
+# Misc
+*.tgz
+.DS_Store

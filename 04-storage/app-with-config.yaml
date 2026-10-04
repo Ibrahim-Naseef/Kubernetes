@@ -1,0 +1,42 @@
+# Real world: same image everywhere; config via ConfigMap, credentials via Secret, data via PVC.
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: app-config, namespace: nginx}
+data:
+  LOG_LEVEL: info
+  index.html: "<h1>Hello from a ConfigMap-mounted file</h1>"
+---
+apiVersion: v1
+kind: Secret
+metadata: {name: app-secret, namespace: nginx}
+type: Opaque
+stringData:
+  DB_PASSWORD: change-me
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: web-with-storage, namespace: nginx}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: web-storage}
+  template:
+    metadata:
+      labels: {app: web-storage}
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.27
+          env:
+            - name: LOG_LEVEL
+              valueFrom: {configMapKeyRef: {name: app-config, key: LOG_LEVEL}}
+            - name: DB_PASSWORD
+              valueFrom: {secretKeyRef: {name: app-secret, key: DB_PASSWORD}}
+          volumeMounts:
+            - {name: html, mountPath: /usr/share/nginx/html}   # ConfigMap file
+            - {name: uploads, mountPath: /data}                # persistent disk
+      volumes:
+        - name: html
+          configMap: {name: app-config, items: [{key: index.html, path: index.html}]}
+        - name: uploads
+          persistentVolumeClaim: {claimName: local-pvc}

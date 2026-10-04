@@ -1,0 +1,22 @@
+# Node affinity + taints/tolerations
+# Prep:  kubectl label node <node> disktype=ssd
+#        kubectl taint node <node> dedicated=gpu:NoSchedule
+apiVersion: v1
+kind: Pod
+metadata: {name: scheduled-pod}
+spec:
+  tolerations:                       # "I am allowed onto tainted nodes"
+    - {key: dedicated, operator: Equal, value: gpu, effect: NoSchedule}
+  affinity:
+    nodeAffinity:                    # "I want to be on certain nodes"
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - {key: disktype, operator: In, values: [ssd]}
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 50
+          preference:
+            matchExpressions:
+              - {key: topology.kubernetes.io/zone, operator: In, values: [ap-south-1a]}
+  containers:
+    - {name: app, image: nginx:1.27}

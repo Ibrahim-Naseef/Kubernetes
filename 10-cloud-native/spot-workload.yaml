@@ -1,0 +1,21 @@
+# Stateless workers that tolerate being killed -> run on Spot (60-90% cheaper).
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: image-resizer}
+spec:
+  replicas: 5
+  selector:
+    matchLabels: {app: image-resizer}
+  template:
+    metadata:
+      labels: {app: image-resizer}
+    spec:
+      nodeSelector: {lifecycle: spot}
+      tolerations:
+        - {key: lifecycle, operator: Equal, value: spot, effect: NoSchedule}
+      terminationGracePeriodSeconds: 30     # Spot gives ~2 min warning: finish work quickly
+      containers:
+        - name: worker
+          image: busybox:1.36
+          command: ["sh", "-c", "while true; do echo resizing; sleep 5; done"]
+          resources: {requests: {cpu: 200m, memory: 128Mi}}

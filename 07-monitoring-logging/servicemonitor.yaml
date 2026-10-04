@@ -1,0 +1,30 @@
+# Prometheus Operator: tell Prometheus to scrape any Service labelled app=nginx on port "metrics".
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: nginx
+  namespace: monitoring
+  labels: {release: kube-prometheus-stack}
+spec:
+  namespaceSelector: {matchNames: [nginx]}
+  selector:
+    matchLabels: {app: nginx}
+  endpoints:
+    - {port: metrics, interval: 30s}
+---
+# Alert: pod restarting too often
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: pod-restarts
+  namespace: monitoring
+  labels: {release: kube-prometheus-stack}
+spec:
+  groups:
+    - name: pods
+      rules:
+        - alert: PodCrashLooping
+          expr: increase(kube_pod_container_status_restarts_total[15m]) > 3
+          for: 5m
+          labels: {severity: warning}
+          annotations: {summary: "{{ $labels.pod }} is restarting repeatedly"}

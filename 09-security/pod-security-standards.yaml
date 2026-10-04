@@ -1,0 +1,31 @@
+# Pod Security Standards (PSS) are enforced per-namespace via labels.
+# Levels: privileged < baseline < restricted
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: secure-apps
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/warn: restricted
+---
+# A pod that PASSES 'restricted'
+apiVersion: v1
+kind: Pod
+metadata: {name: hardened-pod, namespace: secure-apps}
+spec:
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 10001
+    seccompProfile: {type: RuntimeDefault}
+  containers:
+    - name: app
+      image: nginxinc/nginx-unprivileged:1.27
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities: {drop: ["ALL"]}
+      volumeMounts:
+        - {name: tmp, mountPath: /tmp}
+  volumes:
+    - {name: tmp, emptyDir: {}}

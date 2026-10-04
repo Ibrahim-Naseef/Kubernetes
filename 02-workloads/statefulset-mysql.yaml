@@ -1,0 +1,51 @@
+# Real world: database needing stable names (mysql-0,1,2) and its own disk each.
+apiVersion: v1
+kind: Namespace
+metadata: {name: mysql}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: mysql-config, namespace: mysql}
+data:
+  MYSQL_DATABASE: devops
+---
+apiVersion: v1
+kind: Secret
+metadata: {name: mysql-secret, namespace: mysql}
+stringData:
+  MYSQL_ROOT_PASSWORD: REPLACE_WITH_A_LOCAL_PASSWORD   # never commit real passwords
+---
+apiVersion: v1
+kind: Service            # headless -> DNS: mysql-0.mysql-service.mysql.svc
+metadata: {name: mysql-service, namespace: mysql}
+spec:
+  clusterIP: None
+  selector: {app: mysql}
+  ports: [{port: 3306}]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata: {name: mysql, namespace: mysql}
+spec:
+  serviceName: mysql-service
+  replicas: 3
+  selector:
+    matchLabels: {app: mysql}
+  volumeClaimTemplates:
+    - metadata: {name: mysql-data}
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources: {requests: {storage: 1Gi}}
+  template:
+    metadata:
+      labels: {app: mysql}
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8.0
+          envFrom:
+            - configMapRef: {name: mysql-config}
+            - secretRef: {name: mysql-secret}
+          ports: [{containerPort: 3306}]
+          volumeMounts:
+            - {name: mysql-data, mountPath: /var/lib/mysql}

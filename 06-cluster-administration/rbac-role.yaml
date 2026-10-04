@@ -1,0 +1,11 @@
+# RBAC: a ServiceAccount (identity) + Role (permissions) + RoleBinding (who gets what)
+# Test: kubectl auth can-i delete pods -n apache --as=system:serviceaccount:apache:apache-user
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: apache-manager
+  namespace: apache
+rules:
+  - apiGroups: ["", "apps"]
+    resources: ["pods", "deployments", "services"]
+    verbs: ["get","list","watch","create","update","patch","delete"]

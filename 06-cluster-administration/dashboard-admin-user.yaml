@@ -1,0 +1,21 @@
+# WARNING: cluster-admin is full access. Use only on local/learning clusters.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name:  admin-user
+  namespace: kubernetes-dashboard
+
+---
+
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: admin-user-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: admin-user
+  namespace: kubernetes-dashboard

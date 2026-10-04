@@ -1,0 +1,32 @@
+# Practice lab: apply, then diagnose each pod with kubectl get/describe/logs.
+apiVersion: v1
+kind: Pod
+metadata: {name: bad-image}            # -> ImagePullBackOff (typo in tag)
+spec:
+  containers: [{name: app, image: nginx:does-not-exist}]
+---
+apiVersion: v1
+kind: Pod
+metadata: {name: crashy}               # -> CrashLoopBackOff (exits with error)
+spec:
+  containers:
+    - {name: app, image: busybox:1.36, command: ["sh", "-c", "echo 'DB_URL missing' >&2; exit 1"]}
+---
+apiVersion: v1
+kind: Pod
+metadata: {name: too-big}              # -> Pending (no node has 100 CPUs)
+spec:
+  containers:
+    - name: app
+      image: nginx:1.27
+      resources: {requests: {cpu: "100"}}
+---
+apiVersion: v1
+kind: Pod
+metadata: {name: oom}                  # -> OOMKilled (uses more than limit)
+spec:
+  containers:
+    - name: app
+      image: polinux/stress
+      command: ["stress", "--vm", "1", "--vm-bytes", "200M"]
+      resources: {limits: {memory: 50Mi}}

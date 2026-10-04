@@ -1,0 +1,29 @@
+# EKS cluster: on-demand node group for critical pods + Spot node group for cheap/stateless work.
+# Create: eksctl create cluster -f eksctl-cluster.yaml
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+metadata:
+  name: demo-cluster
+  region: ap-south-1
+managedNodeGroups:
+  - name: on-demand
+    instanceType: t3.medium
+    minSize: 2
+    maxSize: 4
+    desiredCapacity: 2
+    iam: {withAddonPolicies: {autoScaler: true}}
+    tags:
+      k8s.io/cluster-autoscaler/enabled: "true"
+      k8s.io/cluster-autoscaler/demo-cluster: owned
+  - name: spot
+    instanceTypes: [t3.medium, t3a.medium, t3.large]   # diversify -> fewer interruptions
+    spot: true
+    minSize: 0
+    maxSize: 10
+    labels: {lifecycle: spot}
+    taints:
+      - {key: lifecycle, value: spot, effect: NoSchedule}
+    iam: {withAddonPolicies: {autoScaler: true}}
+    tags:
+      k8s.io/cluster-autoscaler/enabled: "true"
+      k8s.io/cluster-autoscaler/demo-cluster: owned

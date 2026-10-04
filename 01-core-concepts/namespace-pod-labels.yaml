@@ -1,0 +1,27 @@
+# Namespace = virtual cluster (e.g. one per team/environment)
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nginx
+  labels:
+    env: dev
+---
+# Pod with labels (identify/select) and annotations (non-identifying metadata)
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+  namespace: nginx
+  labels:
+    app: nginx
+    tier: frontend
+    env: dev
+  annotations:
+    owner: "platform-team@example.com"
+    docs: "https://wiki.example.com/nginx"
+spec:
+  containers:
+    - name: nginx
+      image: nginx:1.27
+      ports:
+        - containerPort: 80
